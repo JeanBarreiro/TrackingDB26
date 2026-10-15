@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import os
 import pandas as pd
 import psycopg
 
@@ -43,12 +44,25 @@ def main():
 
     print("Iniciando ETL...\n")
 
+    # We use this for docker
+    """ 
     with psycopg.connect(
         host="localhost",
         port=8902,
         dbname="car_tracking",
         user="caradmin",
         password="carpassword"
+    ) as conn:
+    """
+
+    with psycopg.connect(
+        host="dpg-dau56j893c1s73cpaaj0-a.virginia-postgres.render.com",
+        port=5432,
+        dbname="dbclass_hanm",
+        user="edgar1",
+        password=os.environ["DB_PASSWORD"],
+        sslmode="require",
+        connect_timeout=10,
     ) as conn:
 
         for table_name, load_function in LOAD_ORDER:
