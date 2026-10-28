@@ -1,6 +1,7 @@
 import os
 import psycopg
 from fastapi import FastAPI
+from psycopg.rows import dict_row
 
 app = FastAPI(title="TrackingDB26 API")
 
@@ -27,3 +28,19 @@ def check_database():
         "database": database,
         "user": user
     }
+
+@app.get("/vehicles")
+def get_vehicles():
+    with psycopg.connect(
+        os.environ["DATABASE_URL"],
+        row_factory=dict_row
+    ) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT vehicle_id, plate_number, make, model, year
+                FROM public.vehicle
+                ORDER BY vehicle_id;
+            """)
+            vehicles = cur.fetchall()
+
+    return {"vehicles": vehicles}
