@@ -1,3 +1,5 @@
+import os
+import psycopg
 from fastapi import FastAPI
 
 app = FastAPI(title="TrackingDB26 API")
@@ -11,3 +13,17 @@ def home():
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/db-check")
+def check_database():
+    with psycopg.connect(os.environ["DATABASE_URL"]) as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT current_database(), current_user;")
+            database, user = cur.fetchone()
+
+    return {
+        "status": "connected",
+        "database": database,
+        "user": user
+    }
