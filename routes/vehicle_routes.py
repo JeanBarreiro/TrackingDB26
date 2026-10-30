@@ -1,5 +1,5 @@
-from fastapi import APIRouter, HTTPException, Query, Depends
 from database import get_db
+from fastapi import APIRouter, HTTPException, Query, Depends
 
 router = APIRouter()
 
@@ -15,7 +15,7 @@ def get_vehicles(
     offset: int = Query(default=0, ge=0),
     status: str = None,
     plate_number: str = None,
-    conn = Depends(get_db()),
+    conn = Depends(get_db),
 ):
     conditions = []
     params = []

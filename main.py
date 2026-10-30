@@ -1,10 +1,10 @@
 from fastapi import FastAPI
 
-from routes import vehicle_routes
+from routes.vehicle_routes import router
 from etl import ETL_runner
 
-app = FastAPI()
-app.include_router(vehicle_routes())
+app = FastAPI(title="TrackingDB26 API")
+app.include_router(router)
 
 
 

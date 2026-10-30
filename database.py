@@ -3,7 +3,6 @@ import psycopg
 
 from psycopg.rows import dict_row
 
-
 def get_db():
     with psycopg.connect(
         host="dpg-dau56j893c1s73cpaaj0-a.virginia-postgres.render.com",
