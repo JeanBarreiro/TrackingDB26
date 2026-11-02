@@ -45,8 +45,8 @@ class VehicleController:
 
         if vehicle_id <= 0:
             raise HTTPException(
-                status_code=400,
-                detail="Vehicle not found",
+                status_code=404,
+                detail="vehicle_id does not exist.",
             )
 
         vehicle = VehicleDAO.get_by_id(conn, vehicle_id)
@@ -54,7 +54,7 @@ class VehicleController:
         if vehicle is None:
             raise HTTPException(
                 status_code=404,
-                detail="Vehicle not found",
+                detail="vehicle_id does not exist.",
             )
 
         return vehicle

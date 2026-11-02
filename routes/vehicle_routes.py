@@ -1,11 +1,8 @@
 from database import get_db
 from fastapi import APIRouter, Depends, Query
 from controllers.vehicle_controller import VehicleController
-
 router = APIRouter()
 
-
-# GET all vehicles
 @router.get("/api/v1/vehicles")
 def get_vehicles(
     limit: int = Query(default=20, ge=0),
@@ -23,8 +20,6 @@ def get_vehicles(
         plate_number,
     )
 
-
-# GET vehicle by ID
 @router.get("/api/v1/vehicles/{vehicle_id}")
 def get_vehicle_by_id(
     vehicle_id: int,
