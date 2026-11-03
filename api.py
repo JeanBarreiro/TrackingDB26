@@ -3,10 +3,15 @@ import os
 import psycopg
 from fastapi import FastAPI
 from psycopg.rows import dict_row
+from fastapi import Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.exception_handlers import (
+    request_validation_exception_handler
+)
+from fastapi.responses import JSONResponse
 
 from routes.parking_routes import router as parking_router
 from routes.road_routes import router as road_router
-
 
 app = FastAPI(title="TrackingDB26 API")
 
@@ -71,3 +76,30 @@ def get_vehicles():
     return {
         "vehicles": vehicles
     }
+
+
+@app.exception_handler(RequestValidationError)
+async def phase_ii_body_validation_handler(
+    request: Request,
+    exc: RequestValidationError
+):
+    path = request.url.path
+
+    if (
+        request.method in {"POST", "PUT"}
+        and (
+            path.startswith("/api/v1/road-segments")
+            or path.startswith("/api/v1/parking-areas")
+        )
+    ):
+        return JSONResponse(
+            status_code=400,
+            content={
+                "detail": "Malformed JSON or invalid request body"
+            }
+        )
+
+    return await request_validation_exception_handler(
+        request,
+        exc
+    )
