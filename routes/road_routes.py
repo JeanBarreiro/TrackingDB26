@@ -116,6 +116,7 @@ def update_road(
 
 
 @router.delete("/{road_id}")
+@router.delete("/{road_id}/remove")
 def delete_road(road_id: str):
     return road_controller.delete_road(
         parse_id(road_id, "road_id")

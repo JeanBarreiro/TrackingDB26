@@ -1,24 +1,15 @@
-import os
 from datetime import datetime, timezone
 
-import psycopg
 from psycopg import sql
-from psycopg.rows import dict_row
-
-
-def connection():
-    return psycopg.connect(
-        os.environ["DATABASE_URL"],
-        row_factory=dict_row
-    )
+from backend.database import connection, database_schema
 
 
 def table(name: str):
-    if name not in {"parking_area", "road_segment"}:
+    if name not in {"parking_area", "road_segment", "vehicle", "driver", "trip", "location_ping"}:
         raise ValueError("Invalid table")
 
     return sql.Identifier(
-        os.getenv("DB_SCHEMA", "public"),
+        database_schema(),
         name
     )
 

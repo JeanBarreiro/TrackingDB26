@@ -1,0 +1,18 @@
+name: trackingdb26-tests
+services:
+  db:
+    image: postgis/postgis:17-3.5
+    platform: linux/amd64
+    environment:
+      POSTGRES_DB: tracking_phase2_test
+      POSTGRES_USER: tracking_test
+      POSTGRES_PASSWORD: local_test_password
+    ports:
+      - "127.0.0.1:${TEST_DB_PORT:-8914}:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tracking_test -d tracking_phase2_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 30

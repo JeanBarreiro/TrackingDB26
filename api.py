@@ -1,9 +1,5 @@
-import os
-
 import psycopg
-from fastapi import FastAPI
-from psycopg.rows import dict_row
-from fastapi import Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.exception_handlers import (
     request_validation_exception_handler
@@ -12,13 +8,18 @@ from fastapi.responses import JSONResponse
 
 from routes.parking_routes import router as parking_router
 from routes.road_routes import router as road_router
+from backend.dao.status import StatusDAO
+from backend.database import get_db
+from backend.routes.trip import router as trip_router
+from backend.routes.location_ping import router as location_ping_router
 
 app = FastAPI(title="TrackingDB26 API")
 
 
-# Register Parking and Road routes
 app.include_router(parking_router)
 app.include_router(road_router)
+app.include_router(trip_router)
+app.include_router(location_ping_router)
 
 
 @app.get("/")
@@ -36,46 +37,13 @@ def health():
 
 
 @app.get("/db-check")
-def check_database():
-    with psycopg.connect(
-        os.environ["DATABASE_URL"]
-    ) as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                "SELECT current_database(), current_user;"
-            )
-            database, user = cur.fetchone()
-
-    return {
-        "status": "connected",
-        "database": database,
-        "user": user
-    }
+def check_database(connection=Depends(get_db, scope="function")):
+    return {"status": "connected", **StatusDAO(connection).database()}
 
 
 @app.get("/vehicles")
-def get_vehicles():
-    with psycopg.connect(
-        os.environ["DATABASE_URL"],
-        row_factory=dict_row
-    ) as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
-                SELECT
-                    vehicle_id,
-                    plate_number,
-                    make,
-                    model,
-                    year
-                FROM public.vehicle
-                ORDER BY vehicle_id;
-            """)
-
-            vehicles = cur.fetchall()
-
-    return {
-        "vehicles": vehicles
-    }
+def get_vehicles(connection=Depends(get_db, scope="function")):
+    return {"vehicles": StatusDAO(connection).vehicles()}
 
 
 @app.exception_handler(RequestValidationError)
@@ -85,7 +53,11 @@ async def phase_ii_body_validation_handler(
 ):
     path = request.url.path
 
-    if (
+    tracking_request = (
+        path.startswith("/api/v1/trips")
+        or path.startswith("/api/v1/location-pings")
+    )
+    if tracking_request or (
         request.method in {"POST", "PUT"}
         and (
             path.startswith("/api/v1/road-segments")
@@ -102,4 +74,14 @@ async def phase_ii_body_validation_handler(
     return await request_validation_exception_handler(
         request,
         exc
+    )
+
+
+@app.exception_handler(psycopg.Error)
+async def database_error(_request, exc):
+    unavailable = isinstance(exc, psycopg.OperationalError)
+    return JSONResponse(
+        status_code=503 if unavailable else 500,
+        content={"detail": "Database connection unavailable." if unavailable else
+                 "Database operation failed. Check the connection and schema setup."}
     )

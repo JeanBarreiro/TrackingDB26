@@ -1,5 +1,7 @@
 # TrackingDB26
 
+For the Phase II Trip and Location Ping API, including PyCharm and Render connection settings, see [backend/README.md](backend/README.md). The instructions below cover Phase I.
+
 ## 1. Prerequisites
 
 Before running the project, make sure the following tools are installed:

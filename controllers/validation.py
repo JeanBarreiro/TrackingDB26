@@ -5,6 +5,7 @@ import json
 import math
 
 from fastapi import HTTPException
+from backend.validation import MAX_BIGINT, finite_number
 
 
 def bad(message):
@@ -21,7 +22,7 @@ def parse_pagination(limit, offset):
     except (TypeError, ValueError):
         bad("limit and offset must be non-negative integers")
 
-    if limit_value < 0 or offset_value < 0:
+    if not (0 <= limit_value <= MAX_BIGINT and 0 <= offset_value <= MAX_BIGINT):
         bad("limit and offset must be non-negative integers")
 
     return limit_value, offset_value
@@ -56,24 +57,21 @@ def parse_bbox(value):
 
 def validate_number(value, label):
     if (
-        type(value) not in (int, float)
-        or not math.isfinite(value)
+        not finite_number(value)
         or value < 0
     ):
         bad(f"{label} must be a non-negative number")
 
 
 def validate_coordinates(pos):
-    if not isinstance(pos, (tuple, list)) or len(pos) < 2:
+    if not isinstance(pos, (tuple, list)) or len(pos) != 2:
         bad("Each coordinate must contain longitude and latitude")
 
     lon, lat = pos[:2]
 
     if (
-        type(lon) not in (float, int)
-        or type(lat) not in (float, int)
-        or not math.isfinite(lon)
-        or not math.isfinite(lat)
+        not finite_number(lon)
+        or not finite_number(lat)
         or not -180 <= lon <= 180
         or not -90 <= lat <= 90
     ):
