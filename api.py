@@ -12,6 +12,8 @@ from fastapi.responses import JSONResponse
 
 from routes.parking_routes import router as parking_router
 from routes.road_routes import router as road_router
+from routes.vehicle_routes import router as vehicle_router
+from routes.driver_routes import router as driver_router
 
 app = FastAPI(title="TrackingDB26 API")
 
@@ -19,7 +21,8 @@ app = FastAPI(title="TrackingDB26 API")
 # Register Parking and Road routes
 app.include_router(parking_router)
 app.include_router(road_router)
-
+app.include_router(vehicle_router)
+app.include_router(driver_router)
 
 @app.get("/")
 def home():
@@ -90,6 +93,8 @@ async def phase_ii_body_validation_handler(
         and (
             path.startswith("/api/v1/road-segments")
             or path.startswith("/api/v1/parking-areas")
+            or path.startswith("/api/v1/vehicles")
+            or path.startswith("/api/v1/drivers")
         )
     ):
         return JSONResponse(

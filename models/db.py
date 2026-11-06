@@ -14,7 +14,7 @@ def connection():
 
 
 def table(name: str):
-    if name not in {"parking_area", "road_segment"}:
+    if name not in {"parking_area", "road_segment", "driver", "vehicle"}:
         raise ValueError("Invalid table")
 
     return sql.Identifier(
