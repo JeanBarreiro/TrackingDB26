@@ -94,6 +94,7 @@ async def phase_ii_body_validation_handler(
             path.startswith("/api/v1/road-segments")
             or path.startswith("/api/v1/parking-areas")
             or path.startswith("/api/v1/vehicles")
+            or path.startswith("/api/v1/drivers")
         )
     ):
         return JSONResponse(
