@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Body, Query
 
 from controllers import vehicle_controller
 
@@ -12,6 +12,12 @@ router = APIRouter(
     prefix="/api/v1/vehicles",
     tags=["Vehicles"]
 )
+
+
+@router.post("", status_code=201)
+def create_vehicle(body: dict = Body(...)):
+
+    return vehicle_controller.create_vehicle(body)
 
 
 @router.get("")
@@ -39,5 +45,25 @@ def get_vehicles(
 def get_vehicle(vehicle_id: str):
 
     return vehicle_controller.get_vehicle(
+        parse_id(vehicle_id, "vehicle_id")
+    )
+
+
+@router.put("/{vehicle_id}")
+def update_vehicle(
+    vehicle_id: str,
+    body: dict = Body(...)
+):
+
+    return vehicle_controller.update_vehicle(
+        parse_id(vehicle_id, "vehicle_id"),
+        body
+    )
+
+
+@router.delete("/{vehicle_id}")
+def delete_vehicle(vehicle_id: str):
+
+    return vehicle_controller.delete_vehicle(
         parse_id(vehicle_id, "vehicle_id")
     )
