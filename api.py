@@ -16,6 +16,7 @@ from routes.vehicle_routes import router as vehicle_router
 from routes.driver_routes import router as driver_router
 from routes.location_ping_routes import router as location_ping_router
 from routes.trip_routes import router as trip_router
+from routes import vehicle_assignment_routes
 
 app = FastAPI(title="TrackingDB26 API")
 
@@ -27,6 +28,7 @@ app.include_router(vehicle_router)
 app.include_router(driver_router)
 app.include_router(location_ping_router)
 app.include_router(trip_router)
+app.include_router(vehicle_assignment_routes.router)
 
 @app.get("/")
 def home():
@@ -101,6 +103,7 @@ async def phase_ii_body_validation_handler(
             or path.startswith("/api/v1/drivers")
             or path.startswith("/api/v1/location-pings")
             or path.startswith("/api/v1/trips")
+            or path.startswith("/api/v1/vehicle_assignments")
         )
     ):
         return JSONResponse(
