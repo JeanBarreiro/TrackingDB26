@@ -3,6 +3,8 @@
 
 import json
 import math
+import re
+from datetime import datetime, timezone
 
 from fastapi import HTTPException
 
@@ -21,7 +23,7 @@ def parse_pagination(limit, offset):
     except (TypeError, ValueError):
         bad("limit and offset must be non-negative integers")
 
-    if limit_value < 0 or offset_value < 0:
+    if not (0 <= limit_value <= 2**63 - 1 and 0 <= offset_value <= 2**63 - 1):
         bad("limit and offset must be non-negative integers")
 
     return limit_value, offset_value
@@ -54,13 +56,13 @@ def parse_bbox(value):
     return values
 
 
-def validate_number(value, label):
-    if (
-        type(value) not in (int, float)
-        or not math.isfinite(value)
-        or value < 0
-    ):
-        bad(f"{label} must be a non-negative number")
+def validate_number(value, label, status=400):
+    try:
+        valid = type(value) in (int, float) and math.isfinite(value) and value >= 0
+    except OverflowError:
+        valid = False
+    if not valid:
+        raise HTTPException(status, f"{label} must be a non-negative number")
 
 
 def validate_coordinates(pos):
@@ -72,8 +74,6 @@ def validate_coordinates(pos):
     if (
         type(lon) not in (float, int)
         or type(lat) not in (float, int)
-        or not math.isfinite(lon)
-        or not math.isfinite(lat)
         or not -180 <= lon <= 180
         or not -90 <= lat <= 90
     ):
@@ -89,7 +89,13 @@ def validate_geom(geom, expected):
     if not isinstance(coords, list) or not coords:
         bad("geom must have coordinates")
 
-    if expected == "LineString":
+    if expected == "Point":
+        if len(coords) != 2:
+            bad("Point requires longitude and latitude")
+        validate_coordinates(coords)
+        geom = {"type": "Point", "coordinates": coords}
+
+    elif expected == "LineString":
         if len(coords) < 2:
             bad("LineString requires at least two positions")
 
@@ -170,14 +176,14 @@ def validate_payload(payload, kind, update=False):
     return payload
 
 
-def parse_id(value, label):
+def parse_id(value, label, status=400):
     try:
         number = int(value)
     except (TypeError, ValueError):
-        bad(f"{label} must be a positive integer")
+        raise HTTPException(status, f"{label} must be a positive integer")
 
     if number <= 0:
-        bad(f"{label} must be a positive integer")
+        raise HTTPException(status, f"{label} must be a positive integer")
 
     return number
 
@@ -204,3 +210,24 @@ def check_speed_bounds(low, high):
         and low > high
     ):
         bad("min_speed_kph cannot exceed max_speed_kph")
+
+
+def parse_timestamp(value, label, status=400):
+    pattern = r"\d{4}-\d{2}-\d{2}[Tt]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[Zz]|[+-]\d{2}:\d{2})"
+    if not isinstance(value, str) or not re.fullmatch(pattern, value):
+        raise HTTPException(status, f"{label} must be an RFC 3339 timestamp with a timezone")
+    if value[-1] not in "Zz" and (int(value[-5:-3]) > 23 or int(value[-2:]) > 59):
+        raise HTTPException(status, f"{label} has an invalid timezone offset")
+    try:
+        parsed = datetime.fromisoformat(value.upper().replace("Z", "+00:00"))
+        return parsed.astimezone(timezone.utc).replace(tzinfo=None)
+    except (ValueError, OverflowError):
+        raise HTTPException(status, f"{label} is not a valid timestamp") from None
+
+
+def parse_time_range(from_ts, to_ts):
+    start = parse_timestamp(from_ts, "from_ts") if from_ts is not None else None
+    end = parse_timestamp(to_ts, "to_ts") if to_ts is not None else None
+    if start is not None and end is not None and start > end:
+        bad("from_ts must not be later than to_ts")
+    return start, end
