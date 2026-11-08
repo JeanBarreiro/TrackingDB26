@@ -1,6 +1,6 @@
 import psycopg
 
-from fastapi import HTTPException
+from fastapi import HTTPException, Response
 
 from models import vehicle_dao
 
@@ -9,6 +9,19 @@ STATUS_MAP = {
     "active": 1,
     "inactive": 2,
 }
+
+
+class VehicleController:
+    def get_current_location(self, vehicle_id):
+        result = vehicle_dao.get_current_location(vehicle_id)
+
+        if result is None:
+            raise HTTPException(404, "Vehicle does not exist")
+
+        if result.pop("_ping_id") is None:
+            return Response(status_code=204)
+
+        return result
 
 
 def get_vehicles(
