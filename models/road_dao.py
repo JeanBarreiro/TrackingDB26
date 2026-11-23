@@ -72,6 +72,8 @@ def list_roads(
                     road_id,
                     name,
                     speed_limit_kph,
+                    is_oneway,
+                    direction,
                     created_at
                 FROM {}{}
                 ORDER BY road_id
@@ -100,6 +102,8 @@ def get_road_by_id(road_id):
                     road_id,
                     name,
                     speed_limit_kph,
+                    is_oneway,
+                    direction,
                     ST_AsGeoJSON(geom)::json AS geom,
                     created_at
                 FROM {}
