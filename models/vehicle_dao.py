@@ -111,6 +111,54 @@ def get_by_id(vehicle_id):
 
         return normalize_record(cur.fetchone())
 
+
+def get_current_location(vehicle_id):
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            sql.SQL("""
+                SELECT
+                    v.vehicle_id,
+                    v.plate_number,
+                    vs.name AS status,
+                    vk.name AS vehicle_kind,
+                    ft.name AS fuel_type,
+                    vt.emissions_rating,
+                    latest.ts AS last_ts,
+                    ST_AsGeoJSON(latest.geom, 15)::json AS last_geom,
+                    latest.speed_kph,
+                    latest.heading_deg,
+                    latest.ping_id AS _ping_id
+                FROM {} AS v
+                LEFT JOIN {} AS vs
+                    ON vs.vehicle_status_id = v.vehicle_status_id
+                LEFT JOIN {} AS vt
+                    ON vt.vehicle_type_id = v.vehicle_type_id
+                LEFT JOIN {} AS vk
+                    ON vk.vehicle_kind_id = vt.vehicle_kind_id
+                LEFT JOIN {} AS ft
+                    ON ft.fuel_type_id = vt.fuel_type_id
+                LEFT JOIN LATERAL (
+                    SELECT ping_id, ts, geom, speed_kph, heading_deg
+                    FROM {}
+                    WHERE vehicle_id = v.vehicle_id
+                    ORDER BY ts DESC NULLS LAST
+                    LIMIT 1
+                ) AS latest ON TRUE
+                WHERE v.vehicle_id = %s
+            """).format(
+                table("vehicle"),
+                table("vehicle_status"),
+                table("vehicle_type"),
+                table("vehicle_kind"),
+                table("fuel_type"),
+                table("location_ping")
+            ),
+            (vehicle_id,)
+        )
+
+        return normalize_record(cur.fetchone())
+
+
 # ------------------------------------------
 def create_vehicle(payload):
 

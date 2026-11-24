@@ -26,7 +26,10 @@ class TripController:
                 values[field] = parse_timestamp(values[field], field, status)
         for field in ("start_geom", "end_geom"):
             if values.get(field) is not None:
-                values[field] = validate_geom(values[field], "Point")
+                try:
+                    values[field] = validate_geom(values[field], "Point")
+                except HTTPException as exc:
+                    raise HTTPException(status, exc.detail) from exc
         if values.get("distance_km") is not None:
             validate_number(values["distance_km"], "distance_km", status)
         return values

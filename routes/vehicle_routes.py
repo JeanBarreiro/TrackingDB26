@@ -41,6 +41,13 @@ def get_vehicles(
     )
 
 
+@router.get("/{vehicle_id}/current-location")
+def get_current_location(vehicle_id: str):
+    return vehicle_controller.VehicleController().get_current_location(
+        parse_id(vehicle_id, "vehicle_id")
+    )
+
+
 @router.get("/{vehicle_id}")
 def get_vehicle(vehicle_id: str):
 
